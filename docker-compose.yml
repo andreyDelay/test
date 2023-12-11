@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  zipkin:
+    image: custom-zipkin:latest #openzipkin/zipkin:latest
+    container_name: zipkinServer
+    restart: on-failure
+    environment:
+      - RABBIT_ADDRESSES=rabbitmq
+      - STORAGE_TYPE=mem
+      - RABBIT_USER=andrey
+      - RABBIT_PASSWORD=andrey
+    ports:
+      - '9411:9411'
+    depends_on:
+      - rabbitmq
+    networks:
+      zipkin-network:
+        aliases:
+          - "zipkinServer"
+
+  zoonavigator:
+    image: elkozmon/zoonavigator
+    container_name: zoonavigator
+    restart: on-failure
+    ports:
+      - '9000:9000'
+    depends_on:
+      - zipkin
+    networks:
+      zipkin-network:
+
+  rabbitmq:
+    image: rabbitmq:3.10.7-management
+    container_name: rabbitmq
+    hostname: rabbitmq
+    restart: on-failure
+    environment:
+      - RABBITMQ_DEFAULT_USER=andrey
+      - RABBITMQ_DEFAULT_PASS=andrey
+    ports:
+      - 5672:5672
+      - 15672:15672
+    networks:
+      zipkin-network:
+
+networks:
+  zipkin-network:
+    driver: bridge
